@@ -65,71 +65,71 @@ class ConfidenceRouter:
         Returns:
             RoutingDecision with routing action and metadata
         """
-        # TODO 12: Implement routing logic
-        #
         # 1. Check if action_type is in HIGH_RISK_ACTIONS
-        #    -> If yes: always escalate (action="escalate", priority="high",
-        #       requires_human=True, reason="High-risk action: {action_type}")
-        #
-        # 2. Check confidence thresholds:
-        #    - confidence >= 0.9:
-        #      action="auto_send", priority="low",
-        #      requires_human=False, reason="High confidence"
-        #
-        #    - 0.7 <= confidence < 0.9:
-        #      action="queue_review", priority="normal",
-        #      requires_human=True, reason="Medium confidence — needs review"
-        #
-        #    - confidence < 0.7:
-        #      action="escalate", priority="high",
-        #      requires_human=True, reason="Low confidence — escalating"
+        if action_type in HIGH_RISK_ACTIONS:
+            return RoutingDecision(
+                action="escalate",
+                confidence=confidence,
+                reason=f"High-risk action: {action_type}",
+                priority="high",
+                requires_human=True,
+            )
 
-        return RoutingDecision(
-            action="auto_send",
-            confidence=confidence,
-            reason="TODO: implement routing logic",
-            priority="low",
-            requires_human=False,
-        )  # TODO: Replace with implementation
+        # 2. Check confidence thresholds:
+        if confidence >= self.HIGH_THRESHOLD:
+            return RoutingDecision(
+                action="auto_send",
+                confidence=confidence,
+                reason="High confidence",
+                priority="low",
+                requires_human=False,
+            )
+        elif self.MEDIUM_THRESHOLD <= confidence < self.HIGH_THRESHOLD:
+            return RoutingDecision(
+                action="queue_review",
+                confidence=confidence,
+                reason="Medium confidence — needs review",
+                priority="normal",
+                requires_human=True,
+            )
+        else: # confidence < 0.7
+            return RoutingDecision(
+                action="escalate",
+                confidence=confidence,
+                reason="Low confidence — escalating",
+                priority="high",
+                requires_human=True,
+            )
 
 
 # ============================================================
 # TODO 13: Design 3 HITL decision points
-#
-# For each decision point, define:
-# - trigger: What condition activates this HITL check?
-# - hitl_model: Which model? (human-in-the-loop, human-on-the-loop,
-#   human-as-tiebreaker)
-# - context_needed: What info does the human reviewer need?
-# - example: A concrete scenario
-#
-# Think about real banking scenarios where human judgment is critical.
 # ============================================================
 
 hitl_decision_points = [
     {
         "id": 1,
-        "name": "TODO: Name this decision point",
-        "trigger": "TODO: When does this trigger?",
-        "hitl_model": "TODO: human-in-the-loop / human-on-the-loop / human-as-tiebreaker",
-        "context_needed": "TODO: What does the reviewer need to see?",
-        "example": "TODO: Give a concrete example scenario",
+        "name": "High-Value Transfer Authorization",
+        "trigger": "Money transfer request exceeding 50,000,000 VND, or transfer to a newly added recipient account.",
+        "hitl_model": "human-in-the-loop (active block)",
+        "context_needed": "Sender account profile, recipient details, transfer amount, sender's location, transaction history.",
+        "example": "A user asks to transfer 80,000,000 VND to a recipient they have never sent money to before. The system halts the transfer and triggers a human verification queue.",
     },
     {
         "id": 2,
-        "name": "TODO: Name this decision point",
-        "trigger": "TODO: When does this trigger?",
-        "hitl_model": "TODO: human-in-the-loop / human-on-the-loop / human-as-tiebreaker",
-        "context_needed": "TODO: What does the reviewer need to see?",
-        "example": "TODO: Give a concrete example scenario",
+        "name": "Account Contact Info Modification",
+        "trigger": "Request to modify sensitive contact details like phone number, primary email, or account password.",
+        "hitl_model": "human-in-the-loop (active block)",
+        "context_needed": "Current contact details, requested changes, customer verification answers, and device IP history.",
+        "example": "Customer asks: 'I need to change my linked phone number to 0901234567'. The agent routes the ticket to a compliance representative who must call the customer to authenticate the request before applying the changes.",
     },
     {
         "id": 3,
-        "name": "TODO: Name this decision point",
-        "trigger": "TODO: When does this trigger?",
-        "hitl_model": "TODO: human-in-the-loop / human-on-the-loop / human-as-tiebreaker",
-        "context_needed": "TODO: What does the reviewer need to see?",
-        "example": "TODO: Give a concrete example scenario",
+        "name": "Borderline Loan Eligibility Review",
+        "trigger": "Query about loan eligibility where the customer's credit score or monthly income is borderline (confidence score between 0.7 and 0.9).",
+        "hitl_model": "human-on-the-loop (post-audit / pre-approval)",
+        "context_needed": "Customer credit score, monthly income, outstanding debts, loan amount requested, and system-proposed terms.",
+        "example": "Customer asks if they qualify for a 500,000,000 VND mortgage. The agent calculates a borderline eligibility (conf=0.82) and generates draft terms. A credit officer reviews and edits the terms before final approval.",
     },
 ]
 
